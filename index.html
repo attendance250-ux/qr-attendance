@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+
+<body style="margin:0;font-family:Arial;text-align:center;">
+
+<h2>Loading...</h2>
+<div id="reader" style="width:100%;"></div>
+<h3 id="result"></h3>
+
+<script>
+
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyAhyftbAPUonU0nHTnV-5x-HCBq452lXyK5769amWy3THmiUX7h0KDJdIrgnnthBCaXA/exec";
+
+const params = new URLSearchParams(window.location.search);
+const FLOOR = params.get("floor") || "1stFloor";
+
+document.querySelector("h2").innerText = "Scan QR - " + FLOOR;
+
+function showResult(message, success) {
+  document.body.style.backgroundColor = success ? "green" : "red";
+  document.getElementById("result").innerText = message;
+
+  setTimeout(() => {
+    location.reload();
+  }, 2000);
+}
+
+function startScanner() {
+  const html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+    if (devices.length) {
+      html5QrCode.start(
+        devices[0].id,
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+
+          html5QrCode.stop();
+
+          fetch(BACKEND_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              floor: FLOOR,
+              qr: qrCodeMessage
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            showResult(data.message, data.success);
+          });
+
+        }
+      );
+    } else {
+      document.getElementById("result").innerText = "No camera found.";
+    }
+  }).catch(err => {
+    document.getElementById("result").innerText = "Camera Error: " + err;
+  });
+}
+
+startScanner();
+
+</script>
+
+</body>
+</html>
