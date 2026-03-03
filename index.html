@@ -40,17 +40,26 @@ function startScanner() {
 
           html5QrCode.stop();
 
-          fetch(BACKEND_URL, {
-  method: "POST",
-  body: new URLSearchParams({
-    floor: FLOOR,
-    qr: qrCodeMessage
-  })
-})
-          .then(res => res.json())
-          .then(data => {
-            showResult(data.message, data.success);
-          });
+          const form = document.createElement("form");
+form.method = "POST";
+form.action = BACKEND_URL;
+form.target = "_self";
+
+const floorInput = document.createElement("input");
+floorInput.type = "hidden";
+floorInput.name = "floor";
+floorInput.value = FLOOR;
+
+const qrInput = document.createElement("input");
+qrInput.type = "hidden";
+qrInput.name = "qr";
+qrInput.value = qrCodeMessage;
+
+form.appendChild(floorInput);
+form.appendChild(qrInput);
+
+document.body.appendChild(form);
+form.submit();
 
         }
       );
@@ -69,6 +78,7 @@ startScanner();
 </body>
 
 </html>
+
 
 
 
