@@ -41,15 +41,12 @@ function startScanner() {
           html5QrCode.stop();
 
           fetch(BACKEND_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              floor: FLOOR,
-              qr: qrCodeMessage
-            })
-          })
+  method: "POST",
+  body: new URLSearchParams({
+    floor: FLOOR,
+    qr: qrCodeMessage
+  })
+})
           .then(res => res.json())
           .then(data => {
             showResult(data.message, data.success);
@@ -72,5 +69,6 @@ startScanner();
 </body>
 
 </html>
+
 
 
