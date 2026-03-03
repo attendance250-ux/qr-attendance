@@ -108,14 +108,48 @@ const FLOOR = params.get("floor") || "1stFloor";
 
 document.querySelector("h2").innerText = "Scan QR - " + FLOOR;
 
+
+/* 🔥 PREMIUM RESULT SCREEN */
 function showResult(message, success) {
-  document.body.style.backgroundColor = success ? "green" : "red";
-  document.getElementById("result").innerText = message;
+
+  const overlay = document.getElementById("loadingOverlay");
+  overlay.innerHTML = "";
+  overlay.style.display = "flex";
+
+  overlay.style.background = success
+    ? "linear-gradient(to bottom, #065f46, #10b981)"
+    : "linear-gradient(to bottom, #7f1d1d, #dc2626)";
+
+  const card = document.createElement("div");
+  card.style.background = "rgba(0,0,0,0.15)";
+  card.style.padding = "45px 30px";
+  card.style.borderRadius = "18px";
+  card.style.textAlign = "center";
+  card.style.color = "#FFFFFF";
+  card.style.width = "85%";
+  card.style.maxWidth = "420px";
+  card.style.boxShadow = "0 15px 35px rgba(0,0,0,0.35)";
+
+  const icon = document.createElement("div");
+  icon.style.fontSize = "52px";
+  icon.style.marginBottom = "18px";
+  icon.innerHTML = success ? "👤✔️" : "⏰❗";
+
+  const text = document.createElement("div");
+  text.style.fontSize = "22px";
+  text.style.fontWeight = "bold";
+  text.style.lineHeight = "1.4";
+  text.innerText = message;
+
+  card.appendChild(icon);
+  card.appendChild(text);
+  overlay.appendChild(card);
 
   setTimeout(() => {
     location.reload();
-  }, 2500);
+  }, 3000);
 }
+
 
 async function sendToBackend(qrCodeMessage) {
 
@@ -132,12 +166,9 @@ async function sendToBackend(qrCodeMessage) {
 
     const data = await response.json();
 
-    document.getElementById("loadingOverlay").style.display = "none";
-
     showResult(data.message, data.success);
 
   } catch (error) {
-    document.getElementById("loadingOverlay").style.display = "none";
     showResult("Connection Error", false);
   }
 }
