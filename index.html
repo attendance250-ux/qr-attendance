@@ -11,8 +11,6 @@
 <div id="reader" style="width:100%;"></div>
 <h3 id="result"></h3>
 
-<iframe name="hiddenFrame" style="display:none;"></iframe>
-
 <script>
 
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyAhyftbAPUonU0nHTnV-5x-HCBq452lXyK5769amWy3THmiUX7h0KDJdIrgnnthBCaXA/exec";
@@ -31,6 +29,21 @@ function showResult(message, success) {
   }, 2000);
 }
 
+function sendToBackend(qrCodeMessage) {
+
+  const formData = new FormData();
+  formData.append("floor", FLOOR);
+  formData.append("qr", qrCodeMessage);
+
+  fetch(BACKEND_URL, {
+    method: "POST",
+    body: formData,
+    mode: "no-cors"
+  });
+
+  showResult("Recorded Successfully", true);
+}
+
 function startScanner() {
 
   const html5QrCode = new Html5Qrcode("reader");
@@ -45,29 +58,8 @@ function startScanner() {
         qrCodeMessage => {
 
           html5QrCode.stop();
+          sendToBackend(qrCodeMessage);
 
-          const form = document.createElement("form");
-          form.method = "POST";
-          form.action = BACKEND_URL;
-          form.target = "hiddenFrame";
-
-          const floorInput = document.createElement("input");
-          floorInput.type = "hidden";
-          floorInput.name = "floor";
-          floorInput.value = FLOOR;
-
-          const qrInput = document.createElement("input");
-          qrInput.type = "hidden";
-          qrInput.name = "qr";
-          qrInput.value = qrCodeMessage;
-
-          form.appendChild(floorInput);
-          form.appendChild(qrInput);
-
-          document.body.appendChild(form);
-          form.submit();
-
-          showResult("Processing...", true);
         }
       );
 
