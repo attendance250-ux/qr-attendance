@@ -5,6 +5,69 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
 <style>
+body{
+  margin:0;
+  font-family:Arial;
+  text-align:center;
+}
+
+/* OR Divider */
+.divider{
+  margin:25px 0;
+  font-weight:bold;
+  color:#666;
+}
+
+/* Smart Search */
+.search-container{
+  position:relative;
+  width:80%;
+  max-width:400px;
+  margin:auto;
+}
+
+#nameInput{
+  padding:12px;
+  width:100%;
+  font-size:16px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+#suggestions{
+  position:absolute;
+  width:100%;
+  background:white;
+  border:1px solid #ccc;
+  border-top:none;
+  max-height:200px;
+  overflow-y:auto;
+  display:none;
+  text-align:left;
+  z-index:1000;
+}
+
+.suggestion-item{
+  padding:10px;
+  cursor:pointer;
+  border-bottom:1px solid #eee;
+}
+
+.suggestion-item:hover{
+  background:#f3f4f6;
+}
+
+button{
+  padding:12px 25px;
+  font-size:16px;
+  background:#1e40af;
+  color:white;
+  border:none;
+  border-radius:8px;
+  margin-top:10px;
+}
+
+/* Loading Overlay */
 #loadingOverlay {
   position: fixed;
   top: 0;
@@ -19,7 +82,7 @@
   z-index: 9999;
 }
 
-/* Book Container */
+/* Book Animation */
 .book {
   width: 90px;
   height: 65px;
@@ -27,7 +90,6 @@
   perspective: 800px;
 }
 
-/* Blue Cover (static back cover) */
 .cover {
   position: absolute;
   width: 100%;
@@ -37,7 +99,6 @@
   box-shadow: 0 12px 20px rgba(0,0,0,0.25);
 }
 
-/* Spine */
 .spine {
   position: absolute;
   left: -6px;
@@ -47,7 +108,6 @@
   border-radius: 4px 0 0 4px;
 }
 
-/* Flipping Front Cover */
 .flip {
   position: absolute;
   width: 100%;
@@ -59,7 +119,6 @@
   box-shadow: 0 8px 15px rgba(0,0,0,0.2);
 }
 
-/* Inner Page */
 .page {
   position: absolute;
   width: 96%;
@@ -77,16 +136,30 @@
   100% { transform: rotateY(0deg); }
 }
 </style>
-
 </head>
 
-<body style="margin:0;font-family:Arial;text-align:center;">
+<body>
 
-<h2>Loading...</h2>
-<div id="reader" style="width:100%;"></div>
+<h2 id="title">Loading...</h2>
+
+<!-- QR SCAN -->
+<div id="reader" style="width:100%;max-width:500px;margin:auto;"></div>
+
+<div class="divider">──────── OR ────────</div>
+
+<!-- SMART SEARCH -->
+<h3>Search Your Name</h3>
+
+<div class="search-container">
+  <input id="nameInput" placeholder="Type your family name..." autocomplete="off">
+  <div id="suggestions"></div>
+</div>
+
+<button onclick="submitManual()">Submit Attendance</button>
+
 <h3 id="result"></h3>
 
-<!-- 📘 Loading Overlay -->
+<!-- Loading Overlay -->
 <div id="loadingOverlay">
   <div class="book">
     <div class="cover"></div>
@@ -106,10 +179,64 @@ const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyAhyftbAPUonU0nHTn
 const params = new URLSearchParams(window.location.search);
 const FLOOR = params.get("floor") || "1stFloor";
 
-document.querySelector("h2").innerText = "Scan QR - " + FLOOR;
+document.getElementById("title").innerText = "Attendance - " + FLOOR;
 
+let allNames = [];
 
-/* 🔥 PREMIUM RESULT SCREEN */
+/* LOAD NAMES */
+async function loadNames() {
+  const response = await fetch(BACKEND_URL + "?action=getNames");
+  const data = await response.json();
+  allNames = data.names;
+}
+
+/* SMART FILTER */
+const input = document.getElementById("nameInput");
+const suggestionsBox = document.getElementById("suggestions");
+
+input.addEventListener("input", function() {
+
+  const query = this.value.toLowerCase();
+  suggestionsBox.innerHTML = "";
+
+  if (!query) {
+    suggestionsBox.style.display = "none";
+    return;
+  }
+
+  const filtered = allNames.filter(name =>
+    name.toLowerCase().includes(query)
+  );
+
+  if (filtered.length === 0) {
+    suggestionsBox.style.display = "none";
+    return;
+  }
+
+  filtered.slice(0, 10).forEach(name => {
+
+    const div = document.createElement("div");
+    div.className = "suggestion-item";
+    div.textContent = name;
+
+    div.onclick = function() {
+      input.value = name;
+      suggestionsBox.style.display = "none";
+    };
+
+    suggestionsBox.appendChild(div);
+  });
+
+  suggestionsBox.style.display = "block";
+});
+
+document.addEventListener("click", function(e) {
+  if (!e.target.closest(".search-container")) {
+    suggestionsBox.style.display = "none";
+  }
+});
+
+/* RESULT SCREEN */
 function showResult(message, success) {
 
   const overlay = document.getElementById("loadingOverlay");
@@ -124,11 +251,9 @@ function showResult(message, success) {
   card.style.background = "rgba(0,0,0,0.15)";
   card.style.padding = "45px 30px";
   card.style.borderRadius = "18px";
-  card.style.textAlign = "center";
   card.style.color = "#FFFFFF";
   card.style.width = "85%";
   card.style.maxWidth = "420px";
-  card.style.boxShadow = "0 15px 35px rgba(0,0,0,0.35)";
 
   const icon = document.createElement("div");
   icon.style.fontSize = "52px";
@@ -138,41 +263,53 @@ function showResult(message, success) {
   const text = document.createElement("div");
   text.style.fontSize = "22px";
   text.style.fontWeight = "bold";
-  text.style.lineHeight = "1.4";
   text.innerText = message;
 
   card.appendChild(icon);
   card.appendChild(text);
   overlay.appendChild(card);
 
-  setTimeout(() => {
-    location.reload();
-  }, 4000);
+  setTimeout(() => location.reload(), 4000);
 }
 
-
-async function sendToBackend(qrCodeMessage) {
+/* SEND QR */
+async function sendQR(qrValue) {
 
   document.getElementById("loadingOverlay").style.display = "flex";
 
-  try {
-    const response = await fetch(BACKEND_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: `floor=${encodeURIComponent(FLOOR)}&qr=${encodeURIComponent(qrCodeMessage)}`
-    });
+  const response = await fetch(BACKEND_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `floor=${FLOOR}&qr=${encodeURIComponent(qrValue)}`
+  });
 
-    const data = await response.json();
-
-    showResult(data.message, data.success);
-
-  } catch (error) {
-    showResult("Connection Error", false);
-  }
+  const data = await response.json();
+  showResult(data.message, data.success);
 }
 
+/* SEND MANUAL */
+async function submitManual() {
+
+  const name = input.value.trim();
+
+  if (!name) {
+    alert("Please enter your name");
+    return;
+  }
+
+  document.getElementById("loadingOverlay").style.display = "flex";
+
+  const response = await fetch(BACKEND_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `floor=${FLOOR}&manualName=${encodeURIComponent(name)}`
+  });
+
+  const data = await response.json();
+  showResult(data.message, data.success);
+}
+
+/* START QR */
 function startScanner() {
 
   const html5QrCode = new Html5Qrcode("reader");
@@ -187,26 +324,20 @@ function startScanner() {
         qrCodeMessage => {
 
           html5QrCode.stop();
-          sendToBackend(qrCodeMessage);
+          sendQR(qrCodeMessage);
 
         }
       );
 
-    } else {
-      document.getElementById("result").innerText = "No camera found.";
     }
 
-  }).catch(err => {
-    document.getElementById("result").innerText = "Camera Error: " + err;
   });
 }
 
 startScanner();
+loadNames();
 
 </script>
 
 </body>
 </html>
-
-
-
