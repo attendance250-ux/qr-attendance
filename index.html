@@ -146,31 +146,24 @@ let regularNames=[]
 let elementaryNames=[]
 let searchPool=[]
 
-/* LOAD NAMES */
-
 async function loadNames(){
 
 const regularRes=await fetch(BACKEND_URL+"?action=getRegularNames")
 const regularData=await regularRes.json()
-
 regularNames=regularData.names||[]
 
 const elemRes=await fetch(BACKEND_URL+"?action=getElementaryNames")
 const elemData=await elemRes.json()
-
 elementaryNames=elemData.names||[]
 
 searchPool=[
-...regularNames.map(n=>({name:n,type:"regular"})),
-...elementaryNames.map(n=>({name:n,type:"elementary"}))
+...regularNames.map(n=>({name:n,type:"regular",search:n.toLowerCase()})),
+...elementaryNames.map(n=>({name:n,type:"elementary",search:n.toLowerCase()}))
 ]
-
-console.log("Regular:",regularNames.length)
-console.log("Elementary:",elementaryNames.length)
 
 }
 
-/* FAST SEARCH ENGINE */
+/* SEARCH */
 
 const input=document.getElementById("nameInput")
 const suggestions=document.getElementById("suggestions")
@@ -187,7 +180,7 @@ const query=this.value.toLowerCase().trim()
 
 suggestions.innerHTML=""
 
-if(!query){
+if(query.length<1){
 suggestions.style.display="none"
 return
 }
@@ -196,9 +189,7 @@ const results=[]
 
 for(let i=0;i<searchPool.length;i++){
 
-let name=searchPool[i].name
-
-if(name.toLowerCase().includes(query)){
+if(searchPool[i].search.includes(query)){
 
 results.push(searchPool[i])
 
@@ -220,9 +211,11 @@ div.className="suggestion-item"
 div.textContent=r.name+" ("+r.type+")"
 
 div.onclick=function(){
+
 input.value=r.name
 input.dataset.type=r.type
 suggestions.style.display="none"
+
 }
 
 suggestions.appendChild(div)
@@ -231,14 +224,15 @@ suggestions.appendChild(div)
 
 suggestions.style.display="block"
 
-},80)
+},120)
 
 })
 
 document.addEventListener("click",function(e){
 
-if(!e.target.closest(".search-container"))
+if(!e.target.closest(".search-container")){
 suggestions.style.display="none"
+}
 
 })
 
@@ -291,7 +285,7 @@ showResult(data.message,data.success)
 
 }
 
-/* MANUAL */
+/* MANUAL SUBMIT */
 
 async function submitManual(){
 
@@ -306,10 +300,16 @@ let type=input.dataset.type
 
 if(!type){
 
-if(regularNames.includes(name)) type="regular"
-else if(elementaryNames.includes(name)) type="elementary"
+if(regularNames.includes(name)){
+type="regular"
+}
+
+else if(elementaryNames.includes(name)){
+type="elementary"
+}
+
 else{
-alert("Name not found")
+alert("Name not found in masterlist")
 return
 }
 
@@ -329,7 +329,7 @@ showResult(data.message,data.success)
 
 }
 
-/* QR */
+/* QR SCANNER */
 
 function startScanner(){
 
