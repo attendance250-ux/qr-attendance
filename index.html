@@ -2,340 +2,428 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
 <style>
+
 body{
-  margin:0;
-  font-family:Arial;
-  text-align:center;
+margin:0;
+font-family:Arial;
+background:#f3f4f6;
+text-align:center;
 }
 
-/* OR Divider */
+/* HEADER */
+
+header{
+background:#1e40af;
+color:white;
+padding:15px;
+font-size:20px;
+font-weight:bold;
+}
+
+/* MAIN CARD */
+
+.card{
+background:white;
+max-width:500px;
+margin:20px auto;
+padding:20px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.1);
+}
+
+/* QR */
+
+#reader{
+width:100%;
+margin:auto;
+}
+
+/* DIVIDER */
+
 .divider{
-  margin:25px 0;
-  font-weight:bold;
-  color:#666;
+margin:20px 0;
+font-weight:bold;
+color:#777;
 }
 
-/* Smart Search */
+/* TABS */
+
+.tabs{
+display:flex;
+justify-content:center;
+margin-bottom:10px;
+}
+
+.tab{
+flex:1;
+padding:12px;
+cursor:pointer;
+background:#e5e7eb;
+border:none;
+font-weight:bold;
+}
+
+.tab.active{
+background:#1e40af;
+color:white;
+}
+
+/* SEARCH */
+
 .search-container{
-  position:relative;
-  width:80%;
-  max-width:400px;
-  margin:auto;
+position:relative;
 }
 
-#nameInput{
-  padding:12px;
-  width:100%;
-  font-size:16px;
-  border-radius:8px;
-  border:1px solid #ccc;
+input{
+padding:12px;
+width:100%;
+font-size:16px;
+border-radius:8px;
+border:1px solid #ccc;
 }
 
-#suggestions{
-  position:absolute;
-  width:100%;
-  background:white;
-  border:1px solid #ccc;
-  border-top:none;
-  max-height:200px;
-  overflow-y:auto;
-  display:none;
-  text-align:left;
-  z-index:1000;
+.suggestions{
+position:absolute;
+width:100%;
+background:white;
+border:1px solid #ccc;
+border-top:none;
+max-height:200px;
+overflow-y:auto;
+display:none;
+text-align:left;
+z-index:1000;
 }
 
 .suggestion-item{
-  padding:10px;
-  cursor:pointer;
-  border-bottom:1px solid #eee;
+padding:10px;
+cursor:pointer;
+border-bottom:1px solid #eee;
 }
 
 .suggestion-item:hover{
-  background:#f3f4f6;
+background:#f3f4f6;
 }
 
-button{
-  padding:12px 25px;
-  font-size:16px;
-  background:#1e40af;
-  color:white;
-  border:none;
-  border-radius:8px;
-  margin-top:10px;
+/* BUTTON */
+
+button.submit{
+padding:12px;
+width:100%;
+margin-top:10px;
+background:#1e40af;
+color:white;
+border:none;
+border-radius:8px;
+font-size:16px;
 }
 
-/* Loading Overlay */
-#loadingOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: white;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  z-index: 9999;
+/* LOADING */
+
+#loadingOverlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:white;
+display:none;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+z-index:9999;
 }
 
-/* Book Animation */
-.book {
-  width: 90px;
-  height: 65px;
-  position: relative;
-  perspective: 800px;
+/* BOOK */
+
+.book{
+width:90px;
+height:65px;
+position:relative;
+perspective:800px;
 }
 
-.cover {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(145deg, #2b6cb0, #1e4e8c);
-  border-radius: 6px;
-  box-shadow: 0 12px 20px rgba(0,0,0,0.25);
+.cover{
+position:absolute;
+width:100%;
+height:100%;
+background:linear-gradient(145deg,#2b6cb0,#1e4e8c);
+border-radius:6px;
 }
 
-.spine {
-  position: absolute;
-  left: -6px;
-  width: 8px;
-  height: 100%;
-  background: #173a6a;
-  border-radius: 4px 0 0 4px;
+.spine{
+position:absolute;
+left:-6px;
+width:8px;
+height:100%;
+background:#173a6a;
 }
 
-.flip {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(145deg, #3b82f6, #1e40af);
-  border-radius: 6px;
-  transform-origin: left;
-  animation: realisticFlip 1.4s infinite ease-in-out;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+.flip{
+position:absolute;
+width:100%;
+height:100%;
+background:linear-gradient(145deg,#3b82f6,#1e40af);
+transform-origin:left;
+animation:flip 1.4s infinite;
 }
 
-.page {
-  position: absolute;
-  width: 96%;
-  height: 92%;
-  background: #ffffff;
-  top: 4%;
-  left: 2%;
-  border-radius: 4px;
-  box-shadow: inset 0 0 6px rgba(0,0,0,0.08);
+.page{
+position:absolute;
+width:96%;
+height:92%;
+background:white;
+top:4%;
+left:2%;
 }
 
-@keyframes realisticFlip {
-  0%   { transform: rotateY(0deg); }
-  50%  { transform: rotateY(-170deg); }
-  100% { transform: rotateY(0deg); }
+@keyframes flip{
+0%{transform:rotateY(0)}
+50%{transform:rotateY(-170deg)}
+100%{transform:rotateY(0)}
 }
+
 </style>
 </head>
 
 <body>
 
-<h2 id="title">Loading...</h2>
+<header id="title">Loading...</header>
 
-<!-- QR SCAN -->
-<div id="reader" style="width:100%;max-width:500px;margin:auto;"></div>
+<div class="card">
+
+<h3>Scan QR Code</h3>
+<div id="reader"></div>
 
 <div class="divider">──────── OR ────────</div>
 
-<!-- SMART SEARCH -->
-<h3>Search Your Name</h3>
+<h3>Manual Attendance</h3>
 
-<div class="search-container">
-  <input id="nameInput" placeholder="Type your family name..." autocomplete="off">
-  <div id="suggestions"></div>
+<div class="tabs">
+<button class="tab active" onclick="switchTab('regular')">Regular</button>
+<button class="tab" onclick="switchTab('elementary')">Elementary</button>
 </div>
 
-<button onclick="submitManual()">Submit Attendance</button>
+<div class="search-container">
+<input id="nameInput" placeholder="Type name..." autocomplete="off">
+<div id="suggestions" class="suggestions"></div>
+</div>
 
-<h3 id="result"></h3>
+<button class="submit" onclick="submitManual()">Submit Attendance</button>
 
-<!-- Loading Overlay -->
+</div>
+
 <div id="loadingOverlay">
-  <div class="book">
-    <div class="cover"></div>
-    <div class="spine"></div>
-    <div class="page"></div>
-    <div class="flip"></div>
-  </div>
-  <p style="margin-top:22px;font-weight:bold;color:#1e40af;">
-    Checking record...
-  </p>
+<div class="book">
+<div class="cover"></div>
+<div class="spine"></div>
+<div class="page"></div>
+<div class="flip"></div>
+</div>
+<p style="margin-top:20px;font-weight:bold;color:#1e40af">
+Checking record...
+</p>
 </div>
 
 <script>
 
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyAhyftbAPUonU0nHTnV-5x-HCBq452lXyK5769amWy3THmiUX7h0KDJdIrgnnthBCaXA/exec";
+const BACKEND_URL="https://script.google.com/macros/s/AKfycbyAhyftbAPUonU0nHTnV-5x-HCBq452lXyK5769amWy3THmiUX7h0KDJdIrgnnthBCaXA/exec"
 
-const params = new URLSearchParams(window.location.search);
-const FLOOR = params.get("floor") || "1stFloor";
+const params=new URLSearchParams(window.location.search)
+const FLOOR=params.get("floor")||"1stFloor"
 
-document.getElementById("title").innerText = "Attendance - " + FLOOR;
+document.getElementById("title").innerText="Attendance - "+FLOOR
 
-let allNames = [];
+let regularNames=[]
+let elementaryNames=[]
+let currentType="regular"
 
 /* LOAD NAMES */
-async function loadNames() {
-  const response = await fetch(BACKEND_URL + "?action=getNames");
-  const data = await response.json();
-  allNames = data.names;
+
+async function loadNames(){
+
+const res=await fetch(BACKEND_URL+"?action=getNames")
+const data=await res.json()
+
+regularNames=data.regular
+elementaryNames=data.elementary
+
 }
 
-/* SMART FILTER */
-const input = document.getElementById("nameInput");
-const suggestionsBox = document.getElementById("suggestions");
+/* SWITCH TAB */
 
-input.addEventListener("input", function() {
+function switchTab(type){
 
-  const query = this.value.toLowerCase();
-  suggestionsBox.innerHTML = "";
+currentType=type
 
-  if (!query) {
-    suggestionsBox.style.display = "none";
-    return;
-  }
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
 
-  const filtered = allNames.filter(name =>
-    name.toLowerCase().includes(query)
-  );
+if(type==="regular")
+document.querySelectorAll(".tab")[0].classList.add("active")
+else
+document.querySelectorAll(".tab")[1].classList.add("active")
 
-  if (filtered.length === 0) {
-    suggestionsBox.style.display = "none";
-    return;
-  }
+document.getElementById("nameInput").value=""
+document.getElementById("suggestions").style.display="none"
 
-  filtered.slice(0, 10).forEach(name => {
+}
 
-    const div = document.createElement("div");
-    div.className = "suggestion-item";
-    div.textContent = name;
+/* SEARCH */
 
-    div.onclick = function() {
-      input.value = name;
-      suggestionsBox.style.display = "none";
-    };
+const input=document.getElementById("nameInput")
+const suggestions=document.getElementById("suggestions")
 
-    suggestionsBox.appendChild(div);
-  });
+input.addEventListener("input",function(){
 
-  suggestionsBox.style.display = "block";
-});
+const query=this.value.toLowerCase()
 
-document.addEventListener("click", function(e) {
-  if (!e.target.closest(".search-container")) {
-    suggestionsBox.style.display = "none";
-  }
-});
+suggestions.innerHTML=""
 
-/* RESULT SCREEN */
-function showResult(message, success) {
+if(!query){
+suggestions.style.display="none"
+return
+}
 
-  const overlay = document.getElementById("loadingOverlay");
-  overlay.innerHTML = "";
-  overlay.style.display = "flex";
+let list=currentType==="regular"?regularNames:elementaryNames
 
-  overlay.style.background = success
-    ? "linear-gradient(to bottom, #065f46, #10b981)"
-    : "linear-gradient(to bottom, #7f1d1d, #dc2626)";
+const filtered=list.filter(n=>n.toLowerCase().includes(query))
 
-  const card = document.createElement("div");
-  card.style.background = "rgba(0,0,0,0.15)";
-  card.style.padding = "45px 30px";
-  card.style.borderRadius = "18px";
-  card.style.color = "#FFFFFF";
-  card.style.width = "85%";
-  card.style.maxWidth = "420px";
+if(filtered.length===0){
+suggestions.style.display="none"
+return
+}
 
-  const icon = document.createElement("div");
-  icon.style.fontSize = "52px";
-  icon.style.marginBottom = "18px";
-  icon.innerHTML = success ? "👤✔️" : "⏰❗";
+filtered.slice(0,10).forEach(name=>{
 
-  const text = document.createElement("div");
-  text.style.fontSize = "22px";
-  text.style.fontWeight = "bold";
-  text.innerText = message;
+const div=document.createElement("div")
+div.className="suggestion-item"
+div.textContent=name
 
-  card.appendChild(icon);
-  card.appendChild(text);
-  overlay.appendChild(card);
+div.onclick=function(){
+input.value=name
+suggestions.style.display="none"
+}
 
-  setTimeout(() => location.reload(), 4000);
+suggestions.appendChild(div)
+
+})
+
+suggestions.style.display="block"
+
+})
+
+document.addEventListener("click",function(e){
+
+if(!e.target.closest(".search-container"))
+suggestions.style.display="none"
+
+})
+
+/* RESULT */
+
+function showResult(message,success){
+
+const overlay=document.getElementById("loadingOverlay")
+
+overlay.innerHTML=""
+
+overlay.style.display="flex"
+
+overlay.style.background=success?
+"linear-gradient(#065f46,#10b981)":
+"linear-gradient(#7f1d1d,#dc2626)"
+
+const card=document.createElement("div")
+
+card.style.background="rgba(0,0,0,0.15)"
+card.style.padding="40px"
+card.style.borderRadius="16px"
+card.style.color="white"
+card.style.fontSize="22px"
+card.style.fontWeight="bold"
+
+card.innerText=message
+
+overlay.appendChild(card)
+
+setTimeout(()=>location.reload(),4000)
+
 }
 
 /* SEND QR */
-async function sendQR(qrValue) {
 
-  document.getElementById("loadingOverlay").style.display = "flex";
+async function sendQR(qr){
 
-  const response = await fetch(BACKEND_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `floor=${FLOOR}&qr=${encodeURIComponent(qrValue)}`
-  });
+document.getElementById("loadingOverlay").style.display="flex"
 
-  const data = await response.json();
-  showResult(data.message, data.success);
+const res=await fetch(BACKEND_URL,{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:`floor=${FLOOR}&qr=${encodeURIComponent(qr)}`
+})
+
+const data=await res.json()
+
+showResult(data.message,data.success)
+
 }
 
-/* SEND MANUAL */
-async function submitManual() {
+/* MANUAL */
 
-  const name = input.value.trim();
+async function submitManual(){
 
-  if (!name) {
-    alert("Please enter your name");
-    return;
-  }
+const name=input.value.trim()
 
-  document.getElementById("loadingOverlay").style.display = "flex";
-
-  const response = await fetch(BACKEND_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `floor=${FLOOR}&manualName=${encodeURIComponent(name)}`
-  });
-
-  const data = await response.json();
-  showResult(data.message, data.success);
+if(!name){
+alert("Please enter name")
+return
 }
 
-/* START QR */
-function startScanner() {
+document.getElementById("loadingOverlay").style.display="flex"
 
-  const html5QrCode = new Html5Qrcode("reader");
+const res=await fetch(BACKEND_URL,{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:`floor=${FLOOR}&type=${currentType}&manualName=${encodeURIComponent(name)}`
+})
 
-  Html5Qrcode.getCameras().then(devices => {
+const data=await res.json()
 
-    if (devices.length) {
+showResult(data.message,data.success)
 
-      html5QrCode.start(
-        devices[0].id,
-        { fps: 10, qrbox: 250 },
-        qrCodeMessage => {
-
-          html5QrCode.stop();
-          sendQR(qrCodeMessage);
-
-        }
-      );
-
-    }
-
-  });
 }
 
-startScanner();
-loadNames();
+/* QR */
+
+function startScanner(){
+
+const qr=new Html5Qrcode("reader")
+
+Html5Qrcode.getCameras().then(devices=>{
+
+if(devices.length){
+
+qr.start(
+devices[0].id,
+{fps:10,qrbox:250},
+msg=>{
+qr.stop()
+sendQR(msg)
+}
+)
+
+}
+
+})
+
+}
+
+startScanner()
+loadNames()
 
 </script>
 
