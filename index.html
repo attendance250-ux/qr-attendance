@@ -14,8 +14,6 @@ background:#f3f4f6;
 text-align:center;
 }
 
-/* HEADER */
-
 header{
 background:#1e40af;
 color:white;
@@ -23,8 +21,6 @@ padding:15px;
 font-size:20px;
 font-weight:bold;
 }
-
-/* MAIN CARD */
 
 .card{
 background:white;
@@ -35,44 +31,16 @@ border-radius:12px;
 box-shadow:0 6px 20px rgba(0,0,0,0.1);
 }
 
-/* QR */
-
 #reader{
 width:100%;
 margin:auto;
 }
-
-/* DIVIDER */
 
 .divider{
 margin:20px 0;
 font-weight:bold;
 color:#777;
 }
-
-/* TABS */
-
-.tabs{
-display:flex;
-justify-content:center;
-margin-bottom:10px;
-}
-
-.tab{
-flex:1;
-padding:12px;
-cursor:pointer;
-background:#e5e7eb;
-border:none;
-font-weight:bold;
-}
-
-.tab.active{
-background:#1e40af;
-color:white;
-}
-
-/* SEARCH */
 
 .search-container{
 position:relative;
@@ -92,7 +60,7 @@ width:100%;
 background:white;
 border:1px solid #ccc;
 border-top:none;
-max-height:200px;
+max-height:220px;
 overflow-y:auto;
 display:none;
 text-align:left;
@@ -109,8 +77,6 @@ border-bottom:1px solid #eee;
 background:#f3f4f6;
 }
 
-/* BUTTON */
-
 button.submit{
 padding:12px;
 width:100%;
@@ -121,8 +87,6 @@ border:none;
 border-radius:8px;
 font-size:16px;
 }
-
-/* LOADING */
 
 #loadingOverlay{
 position:fixed;
@@ -136,55 +100,6 @@ justify-content:center;
 align-items:center;
 flex-direction:column;
 z-index:9999;
-}
-
-/* BOOK */
-
-.book{
-width:90px;
-height:65px;
-position:relative;
-perspective:800px;
-}
-
-.cover{
-position:absolute;
-width:100%;
-height:100%;
-background:linear-gradient(145deg,#2b6cb0,#1e4e8c);
-border-radius:6px;
-}
-
-.spine{
-position:absolute;
-left:-6px;
-width:8px;
-height:100%;
-background:#173a6a;
-}
-
-.flip{
-position:absolute;
-width:100%;
-height:100%;
-background:linear-gradient(145deg,#3b82f6,#1e40af);
-transform-origin:left;
-animation:flip 1.4s infinite;
-}
-
-.page{
-position:absolute;
-width:96%;
-height:92%;
-background:white;
-top:4%;
-left:2%;
-}
-
-@keyframes flip{
-0%{transform:rotateY(0)}
-50%{transform:rotateY(-170deg)}
-100%{transform:rotateY(0)}
 }
 
 </style>
@@ -203,11 +118,6 @@ left:2%;
 
 <h3>Manual Attendance</h3>
 
-<div class="tabs">
-<button class="tab active" onclick="switchTab('regular')">Regular</button>
-<button class="tab" onclick="switchTab('elementary')">Elementary</button>
-</div>
-
 <div class="search-container">
 <input id="nameInput" placeholder="Type name..." autocomplete="off">
 <div id="suggestions" class="suggestions"></div>
@@ -218,12 +128,6 @@ left:2%;
 </div>
 
 <div id="loadingOverlay">
-<div class="book">
-<div class="cover"></div>
-<div class="spine"></div>
-<div class="page"></div>
-<div class="flip"></div>
-</div>
 <p style="margin-top:20px;font-weight:bold;color:#1e40af">
 Checking record...
 </p>
@@ -240,46 +144,46 @@ document.getElementById("title").innerText="Attendance - "+FLOOR
 
 let regularNames=[]
 let elementaryNames=[]
-let currentType="regular"
+let searchPool=[]
 
 /* LOAD NAMES */
 
 async function loadNames(){
 
-const res=await fetch(BACKEND_URL+"?action=getNames")
-const data=await res.json()
+const regularRes=await fetch(BACKEND_URL+"?action=getRegularNames")
+const regularData=await regularRes.json()
 
-regularNames=data.regular
-elementaryNames=data.elementary
+regularNames=regularData.names||[]
 
-}
+const elemRes=await fetch(BACKEND_URL+"?action=getElementaryNames")
+const elemData=await elemRes.json()
 
-/* SWITCH TAB */
+elementaryNames=elemData.names||[]
 
-function switchTab(type){
+searchPool=[
+...regularNames.map(n=>({name:n,type:"regular"})),
+...elementaryNames.map(n=>({name:n,type:"elementary"}))
+]
 
-currentType=type
-
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-
-if(type==="regular")
-document.querySelectorAll(".tab")[0].classList.add("active")
-else
-document.querySelectorAll(".tab")[1].classList.add("active")
-
-document.getElementById("nameInput").value=""
-document.getElementById("suggestions").style.display="none"
+console.log("Regular:",regularNames.length)
+console.log("Elementary:",elementaryNames.length)
 
 }
 
-/* SEARCH */
+/* FAST SEARCH ENGINE */
 
 const input=document.getElementById("nameInput")
 const suggestions=document.getElementById("suggestions")
 
+let debounceTimer=null
+
 input.addEventListener("input",function(){
 
-const query=this.value.toLowerCase()
+clearTimeout(debounceTimer)
+
+debounceTimer=setTimeout(()=>{
+
+const query=this.value.toLowerCase().trim()
 
 suggestions.innerHTML=""
 
@@ -288,23 +192,36 @@ suggestions.style.display="none"
 return
 }
 
-let list=currentType==="regular"?regularNames:elementaryNames
+const results=[]
 
-const filtered=list.filter(n=>n.toLowerCase().includes(query))
+for(let i=0;i<searchPool.length;i++){
 
-if(filtered.length===0){
+let name=searchPool[i].name
+
+if(name.toLowerCase().includes(query)){
+
+results.push(searchPool[i])
+
+if(results.length>=10) break
+
+}
+
+}
+
+if(results.length===0){
 suggestions.style.display="none"
 return
 }
 
-filtered.slice(0,10).forEach(name=>{
+results.forEach(r=>{
 
 const div=document.createElement("div")
 div.className="suggestion-item"
-div.textContent=name
+div.textContent=r.name+" ("+r.type+")"
 
 div.onclick=function(){
-input.value=name
+input.value=r.name
+input.dataset.type=r.type
 suggestions.style.display="none"
 }
 
@@ -313,6 +230,8 @@ suggestions.appendChild(div)
 })
 
 suggestions.style.display="block"
+
+},80)
 
 })
 
@@ -350,7 +269,7 @@ card.innerText=message
 
 overlay.appendChild(card)
 
-setTimeout(()=>location.reload(),4000)
+setTimeout(()=>location.reload(),3500)
 
 }
 
@@ -383,12 +302,25 @@ alert("Please enter name")
 return
 }
 
+let type=input.dataset.type
+
+if(!type){
+
+if(regularNames.includes(name)) type="regular"
+else if(elementaryNames.includes(name)) type="elementary"
+else{
+alert("Name not found")
+return
+}
+
+}
+
 document.getElementById("loadingOverlay").style.display="flex"
 
 const res=await fetch(BACKEND_URL,{
 method:"POST",
 headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:`floor=${FLOOR}&type=${currentType}&manualName=${encodeURIComponent(name)}`
+body:`floor=${FLOOR}&type=${type}&manualName=${encodeURIComponent(name)}`
 })
 
 const data=await res.json()
